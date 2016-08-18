@@ -1,5 +1,5 @@
 # Invoke-WinRMAttack
-PowerShell cmdlet to push PowerShell attack modules to a remote system via PSRemoting
+PowerShell cmdlet to push PowerShell attack modules to a remote system via PSRemoting and if required enable WinRM remotely.
 
 Help examples below;
 
