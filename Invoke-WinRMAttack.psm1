@@ -108,8 +108,42 @@ function Invoke-WinRMAttack
 		[switch]$autoconnect
 		
 	)
+
     $Script:remotesession = ''
-	
+    
+    #Check for admin rights, elevate and set the trusted hosts to '*' ie trust all remote hosts
+    function Set-TrustedHosts
+    {
+            If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator'))
+            {   
+          $arguments = 'Set-Item WSMan:localhost\client\trustedhosts -value *'
+          Start-Process -FilePath powershell -Verb runAs -ArgumentList $arguments
+            }
+    }
+
+    #Test for local trusted hosts setting, only checks for '*' ie trust ALL remote hosts
+    $trusted = Get-Item WSMan:\localhost\Client\TrustedHosts
+    if ($trusted.Value -ne '*')
+    {
+        Write-Host -ForegroundColor Yellow "Your system is not configured to trust connection to ANY remote hosts`nWould you like me to configure this for you? (Admin privileges will be required)"
+        $ans = Read-Host -Prompt 'yes or no'
+
+        while("yes","no" -notcontains $ans)
+        {
+	    $ans = Read-Host -prompt 'yes or no'
+        }
+        if ($ans -eq 'yes')
+        {
+        Set-TrustedHosts
+        }
+        else
+        {
+        Write-Host -ForegroundColor Yellow "To configure this yourself, open Powershell as Administrator and enter the following;`n`n# Trust ALL remote hosts`nSet-Item WSMan:localhost\client\trustedhosts -value *`n`n#Trust Specified Hosts`nSet-Item WSMan:\localhost\Client\TrustedHosts -Value "machineA,machineB"`n"
+        write-host -ForegroundColor Red "Cmdlet cannot continue - Exiting"
+        Break
+        }
+    }
+
 	if ($creds)
 	{
 		$creden = Get-Credential
@@ -140,7 +174,7 @@ function Invoke-WinRMAttack
 		}
 	}
 	
-	#Check if PSRemoting is already Enabled
+	#Check if PSRemoting is already Enabled on the remote host
 	Test-PsRemoting
 	
 	function Connect-Remote
