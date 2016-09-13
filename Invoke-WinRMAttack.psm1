@@ -116,7 +116,7 @@ function Invoke-WinRMAttack
     {
             If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator'))
             {   
-          $arguments = 'Set-Item WSMan:localhost\client\trustedhosts -value *'
+          $arguments = 'Set-Item WSMan:localhost\client\trustedhosts -Force -value *'
           Start-Process -FilePath powershell -Verb runAs -ArgumentList $arguments
             }
     }
